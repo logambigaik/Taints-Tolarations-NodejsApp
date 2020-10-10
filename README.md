@@ -27,7 +27,7 @@
   Pods are running on both the nodes, Please check below
 
     kubectl get pods -o wide
-  ![image](https://user-images.githubusercontent.com/58024415/95653271-19342a80-0b15-11eb-885d-33954108802a.png)
+  ![image](https://user-images.githubusercontent.com/58024415/95653649-c6a83d80-0b17-11eb-931f-da78e28652ca.png)
 # Create taint on single node (having key=value:NoSchedule)
     kubectl taint nodes ip-192-168-28-158.ec2.internal key=value:NoSchedule
 # Check Node description
@@ -35,10 +35,9 @@
   ![image](https://user-images.githubusercontent.com/58024415/95653357-d030a600-0b15-11eb-9543-c7d4f051953f.png)
 # Deploy Nodejs application with tolations (having Effect: NoSchedule)
     kubectl apply -f nodejs-deployment-NoSchedule.yml
-  ![image](https://user-images.githubusercontent.com/58024415/95653380-f9513680-0b15-11eb-8e1f-217d1efc49a8.png)
+  ![image](https://user-images.githubusercontent.com/58024415/95653674-feaf8080-0b17-11eb-9356-aacff42bc61c.png)
 
 Pods are running on both the nodes, if you use Effect: NoSchedule
-
 # Create taint on other node (having key=value:NoExecute)
     kubectl taint nodes ip-192-168-47-188.ec2.internal key=value:NoExecute
 # Check where pods running
