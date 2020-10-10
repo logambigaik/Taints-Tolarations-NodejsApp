@@ -3,88 +3,59 @@
 # Pre-requisites:
     - Install GIT
     - EKS Cluster
-    - Install ALB-Ingress-Controller
-    - Request a Cerficate using Certificate Manager
-    - Create Hosted Zone with our Domain Name
-    - External DNS Setup
 # EKS Cluster Setup:
   [EKS Cluster Setup](https://github.com/Naresh240/eks-cluster-setup/blob/main/README.md)
-# ALB Ingress Controller Setup:
-  [ALB Ingress Controller](https://github.com/Naresh240/ALB-Ingress-Controller-Setup/blob/main/README.md)
-# Create Hosted Zone with our Domain Name
-![image](https://user-images.githubusercontent.com/58024415/94990966-7e2fd380-059d-11eb-8285-a82353f38c1a.png)
-# Request a Cerficate using Certificate Manager
-![image](https://user-images.githubusercontent.com/58024415/94990930-301ad000-059d-11eb-9c5d-8ee47d494f82.png)
-# External DNS Setup:
-  [External DNS](https://github.com/Naresh240/External-DNS-Setup-Kubernetes/tree/main)
 # Install GIT:
     yum install git -y
-# Install npm:
-    sudo yum install -y gcc-c++ make
-    curl -sL https://rpm.nodesource.com/setup_13.x | sudo -E bash -
-    sudo yum install -y nodejs
 # Install Docker:
     yum install docker -y
     service docker start
 # Clone code from github:
     git clone https://github.com/Naresh240/RollingUpdate-Rollback-NodejsApp
     cd RollingUpdate-Rollback-NodejsApp
-# Build Maven Artifact:
-    npm install
 # Build Docker image for Springboot Application
     docker build -t naresh240/nodejs-k8s:v1 .
 # Docker login
     docker login
 # Push docker image to dockerhub
     docker push naresh240/nodejs-k8s:v1
-# Deploy nodejs Application using below commands:
-    kubectl apply -f deployment.yml
-    kubectl apply -f service.yml
-# Check pods and services:
-    kubectl get pods
-    kubectl get svc
-# Run ingress for checking output with DNS name
-    kubectl apply -f ingress.yml
-# Check Load Balancer of ALB ingress controller attached to ingress or not
-    kubectl get ingress
-# Go to UI and check our external dns, which showing output application with HTTPS
-  https://nodejs.cloudtechmasters.ml/
+# Check where our nginx pods are running
+    kubectl get nodes
+  ![image](https://user-images.githubusercontent.com/58024415/95653219-adea5880-0b14-11eb-9072-d57604801168.png)
+# Deploy nginx without taints and tolarations Application using below commands:
+    kubectl apply -f nginx-deployment.yml
+  Pods are running on both the nodes, Please check below
+
+    kubectl get pods -o wide
+  ![image](https://user-images.githubusercontent.com/58024415/95653271-19342a80-0b15-11eb-885d-33954108802a.png)
+# Create taint on single node (having key=value:NoSchedule)
+    kubectl taint nodes ip-192-168-28-158.ec2.internal key=value:NoSchedule
+# Check Node description
+    kubectl describe node ip-192-168-28-158.ec2.internal
+  ![image](https://user-images.githubusercontent.com/58024415/95653357-d030a600-0b15-11eb-9543-c7d4f051953f.png)
+# Deploy Nodejs application with tolations (having Effect: NoSchedule)
+    kubectl apply -f nodejs-deployment-NoSchedule.yml
+  ![image](https://user-images.githubusercontent.com/58024415/95653380-f9513680-0b15-11eb-8e1f-217d1efc49a8.png)
+
+Pods are running on both the nodes, if you use Effect: NoSchedule
+
+# Create taint on other node (having key=value:NoExecute)
+    kubectl taint nodes ip-192-168-47-188.ec2.internal key=value:NoExecute
+# Check where pods running
+    kubectl get pods -o wide
+  ![image](https://user-images.githubusercontent.com/58024415/95653476-aa57d100-0b16-11eb-808f-9d1b5e11c5da.png)
+# Deploy Nodejs application with tolations (having Effect: NoExecute)
+    kubectl apply -f kubectl apply -f nodejs-deployment-NoExecute.yml
+  Pods will run on node which having Effect: NoExecute and also terminate older pods, because deployment name is same.
   
-![image](https://user-images.githubusercontent.com/58024415/95006082-dc040000-061d-11eb-8fd6-da6c80216c54.png)
-# Upgrading for nodejs Application:
-Edit our our application and Build docker image with new tag:
-    
-    docker build -t naresh240/nodejs-k8s:v2 .
+  ![image](https://user-images.githubusercontent.com/58024415/95653535-07538700-0b17-11eb-9530-7ec030dc8185.png)
+# CleanUp:
+Deployments:
 
-Push Docker image to docker hub with tag v2:
+    kubectl delete -f nodejs-deployment-NoExecute.yml
+    kubectl delete -f nginx-deployment.yml
 
-    docker push naresh240/nodejs-k8s:v2
+Taints:    
 
-upgrade nodejs application with tag v2:
-    
-    kubectl rollout history deployment nodejs-deployment
-    
-Check rollout history for revision "1"
-    
-    kubectl rollout history deployment nodejs-deployment --revision=1
-    
-Upgrade new image using below command
-    
-    kubectl set image deployment nodejs-deployment nodejs-deployment=naresh240/nodejs-k8s:v2
-    
-# Goto Web UI and check updated version output
-![image](https://user-images.githubusercontent.com/58024415/95006858-854ef400-0626-11eb-8250-9a5d4a559e11.png)
-
-Check rollout history for revision "2"
-
-    kubectl rollout history deployment nodejs-deployment --revision=2
-  
- Rollout to previous version using below command 
-    
-    kubectl rollout undo deployment nodejs-deployment --to-revision=1
-    
-# Goto Web UI and check again:
-  https://nodejs.cloudtechmasters.ml/
-  
-![image](https://user-images.githubusercontent.com/58024415/95006993-fa6ef900-0627-11eb-8269-66299b56f504.png)
-
+    kubectl taint nodes ip-192-168-47-188.ec2.internal key:NoExecute-
+    kubectl taint nodes ip-192-168-28-158.ec2.internal key:NoSchedule-
